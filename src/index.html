@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>msg send</title>
+</head>
+<body>
+    <h1>msg send</h1>
+
+    <label for="inp-ip">ip/port:</label>
+    <br>
+    <input type="text" id="inp-ip" name="inp-ip" value="http://192.168.0.89:8080">
+    <br>
+    <label for="inp-id">id:</label>
+    <br>
+    <input type="text" id="inp-id" name="inp-id" value="1a2b3c">
+    <br>
+    <label for="inp-type">type:</label>
+    <br>
+    <input type="text" id="inp-type" name="inp-type" value="test">
+    <br>
+    <label for="inp-cmd">command:</label>
+    <br>
+    <input type="text" id="inp-cmd" name="inp-cmd" value="MOV">
+    <br>
+    <label for="txt-message">message:</label>
+    <br>
+    <textarea id="txt-message" name="txt-message" rows="4" cols="50">send me</textarea>
+    <br>
+    <label for="txt-extra">extra:</label>
+    <br>
+    <textarea id="txt-extra" name="txt-extra" rows="4" cols="50">extra data</textarea>
+    <br>
+    <button id="btn-send">send</button>
+
+    <script>
+        async function sendMessage() {
+            const ip = document.getElementById("inp-ip").value;
+            const id = document.getElementById("inp-id").value;
+            const typ = document.getElementById("inp-type").value;
+            const cmd = document.getElementById("inp-cmd").value;
+            const msg = document.getElementById("txt-message").value;
+            const ext = document.getElementById("txt-extra").value;
+
+            const payload = {
+                ip: ip,
+                id: id,
+                type: typ,
+                command: cmd,
+                message: msg,
+                extra: ext,
+                time: Date.now()
+            };
+
+            const url = ip + "/" + typ;
+
+            console.log("Sending test payload:", payload, url);
+
+            const res = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const reply = await res.text();
+            console.log("Server replied:", reply);
+        };
+
+        document.getElementById("btn-send").onclick = sendMessage;
+    </script>
+</body>
+</html>
