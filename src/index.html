@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>msg send</title>
+    <link rel="icon" href="favicon.ico" />
 </head>
 <body>
     <h1>msg send</h1>
@@ -17,7 +18,7 @@
     <br>
     <label for="inp-type">type:</label>
     <br>
-    <input type="text" id="inp-type" name="inp-type" value="test">
+    <input type="text" id="inp-type" name="inp-type" value="message">
     <br>
     <label for="inp-cmd">command:</label>
     <br>
@@ -29,18 +30,88 @@
     <br>
     <label for="txt-extra">extra:</label>
     <br>
-    <textarea id="txt-extra" name="txt-extra" rows="4" cols="50">extra data</textarea>
+    <textarea id="txt-extra" name="txt-extra" rows="4" cols="50">extra text</textarea>
     <br>
     <button id="btn-send">send</button>
+    <br>
+    <button id="btn-geo">geo</button>
+    <br>
+    <label for="inp-lat">lat:</label>
+    <br>
+    <input type="text" id="inp-lat" name="inp-lat" value="">
+    <br>
+    <label for="inp-lon">lon:</label>
+    <br>
+    <input type="text" id="inp-lon" name="inp-lon" value="">
+    <br>
+    <label for="inp-geo">geo as extra:</label>
+    <br>
+    <input type="checkbox" id="inp-geo" name="inp-geo">
+
+    <br>
+    <button id="btn-gyro">gyro</button>
+    <br>
+    <button id="btn-rand-gyro">rand gyro</button>
+    <br>
+    <label for="inp-alpha">alpha:</label>
+    <br>
+    <input type="text" id="inp-alpha" name="inp-alpha" value="">
+    <br>
+    <label for="inp-beta">beta:</label>
+    <br>
+    <input type="text" id="inp-beta" name="inp-beta" value="">
+    <br>
+    <label for="inp-gamma">gamma:</label>
+    <br>
+    <input type="text" id="inp-gamma" name="inp-gamma" value="">
+    <br>
+    <label for="inp-gyro">gyro as extra:</label>
+    <br>
+    <input type="checkbox" id="inp-gyro" name="inp-gyro">
+
+    <br>
+    <label for="inp-timer">timer:</label>
+    <br>
+    <input type="checkbox" id="inp-timer" name="inp-timer">
+
+    <br>
+    <label for="txt-log">log:</label>
+    <br>
+    <textarea id="txt-log" name="txt-log" rows="20" cols="100"></textarea>
 
     <script>
+        function log(message) {
+            const log =  document.getElementById("txt-log")
+            if (log) {
+                log.value += message + '\r\n\r\n';
+            }
+        }
+
         async function sendMessage() {
             const ip = document.getElementById("inp-ip").value;
             const id = document.getElementById("inp-id").value;
             const typ = document.getElementById("inp-type").value;
             const cmd = document.getElementById("inp-cmd").value;
             const msg = document.getElementById("txt-message").value;
-            const ext = document.getElementById("txt-extra").value;
+
+            let extra = {extra: document.getElementById("txt-extra").value};
+
+            const geo = document.getElementById("inp-geo");
+            if (geo && geo.checked) {
+                const lat = document.getElementById("inp-lat");
+                const lon = document.getElementById("inp-lon");
+                extra = {lat: lat.value, lon: lon.value};
+            }
+
+            const gyro = document.getElementById("inp-gyro");
+            if (gyro && gyro.checked) {
+                const a = document.getElementById("inp-alpha");
+                const b = document.getElementById("inp-beta");
+                const c = document.getElementById("inp-gamma");
+                extra = {alpha: a.value, beta: b.value, gamma: c.value};
+            }
+
+            const time = new Date().toISOString();
 
             const payload = {
                 ip: ip,
@@ -48,13 +119,13 @@
                 type: typ,
                 command: cmd,
                 message: msg,
-                extra: ext,
-                time: Date.now()
+                extra: extra,
+                time: time
             };
 
             const url = ip + "/" + typ;
 
-            console.log("Sending test payload:", payload, url);
+            log("Sending test payload: " + url + ' - ' + JSON.stringify(payload, null, 2));
 
             const res = await fetch(url, {
                 method: "POST",
@@ -62,11 +133,107 @@
                 body: JSON.stringify(payload)
             });
 
-            const reply = await res.text();
-            console.log("Server replied:", reply);
+            const reply = await res.json();//res.text();
+            log("Server replied: " + JSON.stringify(reply, null, 2));
         };
 
+        function successGeo(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            log(`Latitude: ${latitude} °, Longitude: ${longitude} °`);
+
+            const lat = document.getElementById("inp-lat");
+            const lon = document.getElementById("inp-lon");
+
+            if (lat) {
+                lat.value = latitude;
+            }
+
+            if (lon) {
+                lon.value = longitude;
+            }
+        }
+
+        function errorGeo() {
+            log("Unable to retrieve your location");
+        }
+
+        function getGeo() {
+            if (!navigator.geolocation) {
+                log("Geolocation is not supported by your browser");
+            } else {
+                log("Locating…");
+                navigator.geolocation.getCurrentPosition(successGeo, errorGeo);
+            }
+        }
+
+        function getGyro() {
+            if ("DeviceOrientationEvent" in window) {
+                window.addEventListener("deviceorientation", handleDeviceOrientation);
+            } else {
+                log("Error... This browser does not support DeviceOrientation");
+            }
+        }
+
+        function handleDeviceOrientation(event) {
+            console.log(event);
+            const a = document.getElementById("inp-alpha");
+            const b = document.getElementById("inp-beta");
+            const c = document.getElementById("inp-gamma");
+
+            if (event.alpha && a) {
+                a = event.alpha;
+            }
+
+            if (event.beta && b) {
+                b = event.beta;
+            }
+
+            if (event.gamma && c) {
+                c = event.gamma;
+            }
+        }
+
+        function getRandomGyro() {
+            const a = document.getElementById("inp-alpha");
+            const b = document.getElementById("inp-beta");
+            const c = document.getElementById("inp-gamma");
+
+            if (a) {
+                a.value = Math.floor(Math.random() * 360);
+            }
+
+            if (b) {
+                b.value = Math.floor(Math.random() * 360) - 180;
+            }
+
+            if (c) {
+                c.value = Math.floor(Math.random() * 180) - 90;
+            }
+        }
+
+        let timerInterval;
+
+        function timerEvent() {
+            sendMessage();
+        }
+
+        function toggleTimer() {
+            const checked = document.getElementById("inp-timer").checked;
+
+            if (checked) {
+                timerEvent();
+                timerInterval = setInterval(timerEvent, 5000);
+            } else {
+                clearInterval(timerInterval);
+            }
+        }
+
         document.getElementById("btn-send").onclick = sendMessage;
+        document.getElementById("btn-geo").onclick = getGeo;
+        document.getElementById("btn-gyro").onclick = getGyro;
+        document.getElementById("btn-rand-gyro").onclick = getRandomGyro;
+        document.getElementById("inp-timer").onchange = toggleTimer;
     </script>
 </body>
 </html>
